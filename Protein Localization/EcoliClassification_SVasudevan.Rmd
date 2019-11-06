@@ -1,0 +1,214 @@
+---
+title: "Machine Learning Classification of E. coli Protein Localization Sites"
+author: "Srikant Vasudevan"
+date: "11/4/2019"
+geometry: margin=1cm
+output:
+  pdf_document: 
+    fig_crop: no
+  html_document:
+    df_print: paged
+bibliography: bibliography.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+# ABSTRACT
+@nakai1992knowledge
+@nakai1991expert
+@asuncion2007uci
+@horton2007wolf
+@deng2016efficient
+@min2009deep
+
+Enterohemorrhagic Escherichia coli, better known as E. coli, is a worldwide foodborne pathogen. E. coli is known for surviving well within healthy cattle, fresh produce and in the intestines of many animals. An important, beneficial process that E. coli undergoes is called protein localization. Protein localization, given simply, is the accumulation of a certain protein at a specific site in order for subsequent subcellular processes to be carried out in cellular regions. 
+
+Signal sequence recognition is a method of determing the signal peptides (signal sequences) involved in the transport of proteins through different cellular compartments. Signal sequences contain several different structural components, each of which play a key part in how it transports proteins effectively.
+
+# INTRODUCTION
+
+Using data analysis tools such as R and R Studio, a machine learning classifier will be trained on a multivariate dataset (obtained from the UCI Machine Learning Repository), which includes E. coli attributes and several protein localization sites. This classifier will be created with the incorporation of multiple R libraries and external algorithms, most notably being a “knn” algorithm (k-nearest neighbor algorithm). The classifier will produce a prediction algorithm, from a training set to predict the protein localization sites of a testing set (both the training and testing sets are obtained from the multivariable dataset from the UCI ML Repository).
+
+K-nearest neighbor algorithms are widely used in classification and regression tasks. Knn is known as “instance-based learning” because the function is based locally and the calculations are only performed in the classification process. This method assigns components called “weights” to the contribution of the neighbors (data points) to the overall mean of a certain attribute. Any set of data points that has known values for the classification property can be used as the “training set” for this method.
+
+The dataset contains 8 variables and 336 observations and was donated to the UCI Machine Learning Repository in 1996 by Kenta Nakai of the Institute of Molecular and Cellular Biology. 
+
+The dataset variables are:
+ 
+1. Sequence Name: Accession number for the SWISS-PROT database (factor)
+2. mcg: McGeoch's method for signal sequence recognition. (double)
+3. gvh: von Heijne's method for signal sequence recognition. (double)
+4. lip: von Heijne's Signal Peptidase II consensus sequence score. (boolean)
+5. chg: Presence of charge on N-terminus of predicted lipoproteins. (boolean)
+6. aac: score of discriminant analysis of the amino acid content of the outer membrane and periplasmic proteins.(double)
+7. alm1: score of the ALOM membrane-spanning region prediction program.(double)
+8. alm2: score of ALOM program after excluding putative cleavable signal regions from the sequence.(double)
+9. pls: protein localization site (factor)
+
+
+
+For the instance of this classifier, a distinct discrete variable will assigned to each given protein localization site:
+
+1. cp
+2. im
+3. imL
+4. imS
+5. imU
+6. om
+7. omL
+8. pp
+
+# METHODS
+
+In this classification report, multiple graphical visualizations are used to aid in the process of preliminary analysis and lead us to our final knn prediction.
+
+1. The dataset used in this analysis was downloaded from the UCI Machine Learning repository in the form of a .data file. The .data file was converted into a .csv file and headers were added manually
+2. To analyze the .csv file, R (an open-source statistical programming language) and RStudio (a free IDE for the R language) are used, these tools read the contents of the .csv file and format them into a data frame.
+3. Within R, we will be using a process called “data munging”, this process is used to clean and format the data to be free of errors and easily understood. This process includes replacing or eliminating missing variables, renaming variable headers to either be more understandable or more concise and logically organizing the data so it is in a sensical order, prepped for analysis. The dataset used for this classifier has minimal “dirty data” and is a fairly clean dataset, therefore this step will be less extensive.
+4. Additionally, a multitude of R packages will be used in the analysis process, these include class, ggvis, gmodels, tidyverse, caret, GGally, gridExtra.
+5. To analyze our data, multitudes of visual and numerical representations are used. Ggplot (R library) pairwise plots are used to effectively visualize the different protein localization sites; values such as correlation coefficients, distribution statistics and linear regression models (with localization sites color-coded) are presented to aid in such analysis.
+
+# RESULTS
+
+## Setup
+
+To prepare the data frame, a working directory needs to be set. This directory will allow for any files (in this case the .csv file) to be accessed from the same local directory. In addition to this, all libraries should be loaded and the .csv file should be read to a dataset.
+
+```{r}
+#Working Directory
+setwd("C:/Users/Srikant/Desktop/Data Science/Week 10")
+#Warnings OFF
+options(warn=-1)
+#Loading libraries
+library(class)
+library(ggvis)
+library(gmodels)
+library(tidyverse)
+library(caret)
+library(GGally)
+library(gridExtra)
+#Read dataset
+dataset <- read.csv("./ecoli.csv")
+```
+
+
+## Descriptive Statistics
+
+Now, since the dataset is set up, the display of several different descriptive statistics, including summary(), dim(), str(), glimpse() and head() will allow for a better understanding of the dataset. The goal is to use these descriptive statistics to not only interpret information about the dataset (basic dimensions and setup) as well as to assess the cleanliness of the dataset (lack of missing values, acceptable variable names, etc.).
+
+```{r}
+summary(dataset)
+head(dataset)
+dim(dataset)
+glimpse(dataset)
+tail(dataset)
+```
+
+Through a quick glimpse of the descriptive statistics, it is seen that there are 336 observations with 9 variables within our dataset. Also by looking at the summary of the dataset, it is seen that there are no mising values in the dataset and that the variable names are acceptable for our analysis.
+
+## Graphical Visualization
+
+Aside from the descriptive statistics of the dataset, different graphical visualizations can help in grasping a better understanding of the data. The two that will be used in this classification are a "gg" pairwise plot and a "gg" scatterplot, both with color-coding.
+
+```{r}
+#Create two different scatterplots that each determine correlation between two variables
+sp1 <- ggplot(data=dataset, aes(x=mcg, y=gvh)) 
+sp1 <- sp1 + geom_point(aes(col=pls)) 
+sp1 <- sp1 + labs(title = "Scatterplot of Population by Deaths and Region",
+                  y="Signal Sequence (von Hejine's method)",
+                  x="Signal Sequence (McGeoch's method)")
+sp2 <- ggplot(data=dataset, aes(x=alm1, y=alm2)) 
+sp2 <- sp2 + geom_point(aes(col=pls)) 
+sp2 <- sp2 + labs(title = "Scatterplot of both ALOM program scores",
+                  y="ALOM 2", x="ALOM 1")
+grid.arrange(sp1, sp2)
+```
+
+In these two scatterplots, a few things can be noticed, most notably, there is an apparent positive corrleation between the signal sequences using von Hejine's method and McGeoch's method, which is expected. There is also an apparent positive correlation, though less strong, between the two ALOM scores.
+
+Aside from the correlations, another key piece of information can be obtained from these graphs: there are clear distinctions between different protein localization sites (different colors on the graphs), leading us to believe that the graphed values contribute to the different classifications.
+
+```{r}
+#Separate the dataset in to smaller sets for better visualization
+#Exclude boolean values
+short <- dataset[, c(2:3, 9)]
+short1 <- dataset[, c(6:8, 9)]
+plot1 <- ggpairs(short, aes(color=(pls)), size = 8)
+plot2 <- ggpairs(short1, aes(color=(pls)), size = 8)
+plot1
+plot2
+```
+
+These "gg" pairwise plots contain a plethora of information, correlation between different values, distribution graphs of different variables and comparitive box and bar plots representing different two-variable distributions. The most important data from these plots is the distribution of different variables and correlation between different values. Though touched on in the scatterplots, the pairwise plots qualify the expectation that the alm1 and alm2 values are closely related. The pairwise plots also provide vital information on individual distributions of variables, which seem to be approximately normal or bimodal for all of the protein localization sites, further qualifying the expectation that there is a distinction in most variables for each protein localization site.
+
+## Knn Classification
+
+To start the knn classification process, there is quite a lot of preparation that needs to be done to the dataset. A randomization seed needs to be set to allow for randomization during the sampling stage. A new column will be mutated to the dataset with values representing protein localization sites, but instead of factor values, they will be numeric values (numeric assignments shown in introduction). Using this new column and the randomization seed, an index of 1s and 2s (training set and testing set respectively) will be sampled. The probability for this sample will be 65% 1s (training set) and 35% 2 (testing set).
+
+
+```{r}
+#Set seed for randomization
+set.seed(12345)
+#New column with values 1-8 which will allow us to numerically identify the "pls" values
+dataset <- mutate(dataset, variable_class = as.numeric(dataset$pls))
+
+summary(dataset)
+
+#Split the dataset into 1s and 2s (indexing)
+ind <- sample(2, nrow(dataset), replace=TRUE, prob=c(.65, .35))
+ind
+```
+
+In the display of the index, it is seen that after the random sampling, approximately 65% of the dataset is the training set and approximately 35% of the dataset is the testing set.
+
+After creating the index, the specified index values need to be assigned to either the training or testing set. As seen in the chunk below, only columns 2, 3, 6, 7, and 8 are being used for the knn classification. This is because columns 4 and 5 (consensus sequence score and charge on predicted lipoproteins respectively) are boolean values, and therefore have a negligible contribution to the overall knn classification.
+
+```{r}
+#We are omitting the intrinsically boolean values as well as the factor values
+#Euclidean distance cannot be calculated with such values in place
+dataset.training <- dataset[ind==1, c(2:3, 6:8, 10)]
+dataset.test <- dataset[ind==2, c(2:3, 6:8, 10)]
+
+summary(dataset.test)
+summary(dataset.training)
+
+dataset.trainLabels <- na.omit(dataset[ind==1, 10])
+dataset.testLabels <- na.omit(dataset[ind==2, 10])
+```
+
+After full preparation of the dataset, the knn() function should be used to conduct the knn classification. The results of the knn will be read to the dataset data_pred. Two more datasets will be created, merge and final_data. The "merge" dataset will simply be a data frame containing the observed values (dataset.testLabels) and the predicted values (result of knn classification, data_pred). Names will be applied to the final dataset with the observed values being named as "Observed Class" and the predicted values being named as "Predicted Class".
+
+```{r}
+data_pred <- knn(train = dataset.training, test = dataset.test, cl = dataset.trainLabels, k=1)
+data_pred
+
+merge <- data.frame(dataset.testLabels, data_pred)
+dim(merge)
+names <- colnames(dataset.test)
+names
+final_data <- cbind(dataset.test, merge)
+names(final_data) <- c(names, "Observed Class", "Predicted Class")
+```
+
+# CONCLUSION
+
+## Crosstable Visualization
+
+To visualize the results of the knn compared to the observed results in the dataset, we will use a cross table:
+
+
+```{r}
+CrossTable(x = dataset.testLabels, y = data_pred, prop.chisq=FALSE, format="SPSS")
+```
+
+In this cross table, the columns are the predicted values from the knn prediction algorithm and the rows are the observed values from the dataset. The cross table indicates that out of 59 observed data points of value "1", 59 were correctly predicted; out of 33 observed data points of value "2", 33 were correctly predicted; out of 17 observed data points of value "5", 17 were correctly predicted; out of 10 observed data points with value "6", 10 were correctly predicted; out of 2 observed data points of value "7", 2 were correctly predicted; and out of 16 observed data points of value "8", 16 were correctly predicted. 
+
+The accuracy for all of the predicted cells in the cross table is "1.000" indicating that the knn classification algorithm predicted the protein localization sites of the testing set with 100% accuracy.
+
+# REFERENCES
+
