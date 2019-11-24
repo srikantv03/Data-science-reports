@@ -1,0 +1,218 @@
+---
+title: "Supervised Learning Methods"
+author: "Srikant Vasudevan"
+date: "11/12/2019"
+output: pdf_document
+geometry: margin=1cm
+bibliography: bibliography.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# ABSTRACT
+
+This report will use a dataset from the UCI Machine Learning Repository titled “MAGIC Gamma Telescope Data Set”. This dataset contains several attributes for telescope images and a binary class attribute (class) which serves as a distinction between being signal gamma detection or background hadron particle detection. Within this report, several different supervised learning models will be utilized and assessed to their effectiveness. There is little scientific significance in this report, as it is primarily examining supervised learning techniques, rather than analyzing specific scientific data.
+
+# INTRODUCTION
+
+Supervised learning analyses consist of many different models. One widely used model that can provide seamless statistical visualization is called a decision tree model. The decision tree is a support tool that uses probabilistic decisions, and their possible consequences to map out chances and outcomes in a tree-like format. These trees are useful in visualizing probabilistic data using statistical significance and p-values (these will be discussed later). These trees are very versatile methods to visualize certain data.
+
+Support Vector Machine (svm or ksvm) is one of many supervised learning models used for classification and regression analysis. The svm method of classification uses a training set to record the assignment of data to either of two categories, this method then builds a classification model to use on a testing set (a binary linear classification method). SVMs can also create non-linear classifications by using the kernel trick, which maps their inputs into large multi-dimensional spaces (models). SVMs (and any supervised learning model for that matter) require labelled data, that is, data that is distinctly identified to be of a certain attribute or variable.
+
+Another widely used supervised learning model is called a neural network. Put simply, a neural network is a set of algorithms, that are resemblant of the human brain, that interpret “sensory” data through a given classification method. Neural networks, aside from being an effective method for classification and clustering, can also maintain features that would otherwise be lost within analysis (when using other supervised learning algorithms). Many consider the neural network machine learning method to be the most effective.
+
+In addition to the aforementioned methods of supervised machine learning, many use the random forest method (random decision forest, consisting of several different decision trees). The key to a random forest model is low correlation between individual tree models, this would produce ensemble predictions that equate to a more accurate prediction than the sum of each individual random tree prediction. Random forest models can serve as rich collections of several smaller tree models that diversify and strengthen classification predictions.
+
+Naive Bayesian Analysis consists of a family of “probabilistic classifiers” that use a theorem referred to as “Bayes’ theorem” to create independence assumptions between variables within the data. Naive Bayesian models work in extensive networks but can also be used in a simplified manner.
+
+To calculate statistical significance within the dataset, an algorithm called the Gini index is used. The higher the value of the gini index for an attribute, there is a greater indication of inequality within that variable, therefore making it less likely to contribute to classification with statistical significance.
+
+Tidyverse and GridExtra are both packages that allow for advanced and seamless visualizations of data.Rpart, party, randomForest, nnet, kernlab and e1071 are all packages that contain pre-developed functions for each supervised learning algorithm that will be used in this analysis.
+
+# METHODS
+
+1. The data that was used in this analysis was downloaded from the UCI Machine Learning repository in the form of a .data file. The .data file was converted into a .csv file and headers were added through R code
+2. To analyze the .csv file, R (an open source statistical programming language) and RStudio (a free IDE for the R language) are used, these tools read the contents of the .csv file and format them into a data frame.
+3. Within R, we will be using a process called “data munging”, this process is used to clean and format the data to be free of errors and easily understood. This process includes replacing or eliminating missing variables, renaming variable headers to either be more understandable or more concise, and logically organizing the data so it is in a sensical order, prepped for analysis. The dataset used for this classifier has minimal “dirty data” and is a fairly clean dataset, therefore this step will be less extensive.
+4. Additionally, a multitude of R packages will be used in the analysis process.
+5. To analyze our data, multitudes of visual and numerical representations are used. The majority of the analysis is through several supervised learning models, which allow us to assess the significance of attributes and the accuracy of said models
+
+# RESULTS
+
+To set up our dataset for our supervised learning methods, we need to clear the workspace, turn warnings off (be careful when doing this), set our working directory, source any needed files and libraries and read the csv (turning headers off so we can add them in later).
+
+```{r}
+rm(list = ls())
+options(warn=-1)
+
+setwd("C:/Users/Srikant/Desktop/Data Science/Week 11")
+source("./gini.R")
+
+library(tidyverse)
+library(gridExtra)
+library(rpart)
+library(party)
+library(randomForest)
+library(nnet)
+library(kernlab)
+library(e1071)
+
+data <- read.csv(url("http://archive.ics.uci.edu/ml/machine-learning-databases/magic/magic04.data"), header=FALSE)
+```
+
+The names of the headers of the data are extrapolated from the documentation of the dataset (UCI Machine Learning Repository). First, we look at the summary and dimensions of the data to make sure that we are entering the right data and the right amount of data. Next, we will enter the names and view the summary to make sure the names correspond with the correct columns in the data table. Finally, for the "class" variable, we need to make sure it is a factor variable type for our supervised learning.
+
+```{r}
+summary(data)
+dim(data)
+names(data) <- c("fLength", "fWidth", "fSize",
+                 "fConc", "fConc1", "fAsym", "fM3Long", "fM3Trans",
+                 "fAlpha", "fDist", "class")
+summary(data)
+data$class <- as.factor(data$class)
+```
+
+## Descriptive Statistics
+
+For a quick and better understanding of our dataset, we can look at descriptive statistics of our dataset. These various statistics allow us to see sections of our dataset or specific attributes of it (such as size and distribution).
+
+```{r}
+summary(data)
+head(data)
+dim(data)
+glimpse(data)
+
+```
+
+This distribution has 11 variables and 19020 observations. The distribution of "class" is 12332 gamma signal data points and 6688 hadron background data points.
+
+## Gini Algorithm
+
+The gini algorithm was an algorithm developed to determine which variables in the dataset are the most significant to the determining of the class (whether it is 'g' or 'h').
+
+We are going to use a for loop, with the "gini" value starting at 1 and being changed whenever a lower value comes along. This loop will also tell us the number of the column of the value that produces the lowest gini value.
+
+```{r}
+value <- 1
+for(i in 1:10){
+  ginii <- gini_process(data[,i])
+  if(ginii < value){
+    value <- ginii
+    number <- i
+  }
+  else{
+    value <- value
+  }
+}
+
+value
+number
+names(data)
+```
+
+As a result of this for loop, the lowest gini value present in the dataset is .9996622, which is produced by the 3rd column in the dataset, or "fSize".
+
+NOTE: This gini value, being the lowest one in the dataset, is very high. This means that classification and supervised learning within the dataset will be largely inaccurate moving forward.
+
+## Regression Plots
+
+Below we will produce a regression plot, first without any regression line shown in the plot, and then with both a linear and logistic regression line shown.
+
+The variable being closely examined in these plots will be the the "fSize" because it produced the lowest gini value in our dataset.
+
+```{r}
+data %>%
+  ggplot(aes(x=fSize, y=class)) +
+  geom_jitter(height=0.05, width=0.3, alpha=0.4)
+
+linear <- data %>%
+  mutate(fSize.numeric = as.numeric(as.character(fSize))) %>%
+  mutate(classnum = ifelse(class == "g", 0, 1)) %>%
+  ggplot(aes(x= fSize.numeric, y=classnum)) +
+  geom_jitter(height=.05, width=.3, alpha=.4) +
+  geom_smooth(method = "lm",
+              method.args = list(family="binomial"))
+
+logistic <- data %>%
+  mutate(fSize.numeric = as.numeric(as.character(fSize))) %>%
+  mutate(classnum = ifelse(class == "g", 0, 1)) %>%
+  ggplot(aes(x= fSize.numeric, y=classnum)) +
+  geom_jitter(height=.05, width=.3, alpha=.4) +
+  geom_smooth(method = "glm",
+              method.args = list(family="binomial"))
+
+
+grid.arrange(linear, logistic, nrow=1, ncol=2)
+```
+
+The plot, as expected (due to the large nature of the gini values within our dataset) has no apparent distinction between the "fSize" attribute for the "g" class and the "h" class. This can also be seen in the regression lines, as the linear regression line only varies slightly from the logistic regression, hinting that there is no real correlation between the variable and the classes.
+
+# SUPERVISED LEARNING MODELS
+
+Below are 6 various supervised classification methods:
+
+### Decision Tree Analysis
+```{r}
+modelCT <- data %>%
+  ctree(class~fSize, data = .)%>% plot
+```
+
+In this decision tree, using p-values (probability value representing the probability of a sample statistic occuring (fSize) if the population paramater is false, lower means a more accurate result) of the fSize variable, we can see that 6 bins of probabilities is the optimal value for classification. Since we have determined that classification using the "fSize" variable will reap inaccurate results, the inaccuracy of this tree comes to no surprise. First of all, if majority determines classification, this method only predicts 159 of the data points to be in the "h" class, when there are in fact 6688 data points of the "h" class. This same error can be seen in the "g" class, as the amount of data points is largely over-estimated.
+
+### Partition Model Analysis
+```{r}
+modelPT <- data %>%
+  rpart(class~fSize, data = .)
+predict(modelPT, data) %>% head
+```
+
+Viewing the head (first 5 data points) of the partition model, there is an apparent redundancy that diminishes the veritability of this model. For all of the first 5 values in this model, the probability for the "g" class is .6483701 and the probability for the "h" class is .3516299. These probabilities are equivalent to the distribution of the dataset.
+
+Dataset distribution:
+g; 12332/19020 = .64837013
+h: 6688/19020 = .35162986
+
+### Random Forest Analysis
+```{r}
+modelRF <- data %>%
+  randomForest(class~fSize, data = .)%>% plot
+```
+
+This random forest analysis graph shows the error of the algorithm rather than the output. The error seems to vary greatly for each tree and seems to follow a predictable regression, dismissing the veritability of this model
+
+### Neural Network Analysis
+```{r}
+modelNN <- data %>%
+  nnet(class~fSize, data= ., size = 5)
+predict(modelNN, data) %>% head
+```
+
+In the head of this dataset, we can see probability values, all of which are under .5, signifying that the neural network believes that (for at least the first 5 values of the dataset), they would all belong to the same class. This is in fact the case, even though the predictor does vary, this is a decently accurate predictor.
+
+### Support Vector Machine Analysis
+```{r}
+modelSVM <- data %>%
+  ksvm(class~fSize, data = .)
+
+table(data$class, predict(modelSVM, data))
+```
+
+
+
+### Naive Bayesian Analysis
+```{r}
+modelNB <- data %>%
+  naiveBayes(class~fSize, data=.)
+  predict(modelNB, data) %>% head
+  table(data$class, predict(modelNB, data))
+```
+
+Both the support vector machine model and the naive bayesian model output a table where predicted values and observed values merge. When the row and column are both "g" or both "h", this indicates that the class has been correctly predicted. Otherwise, the class has not been correctly predicted.
+
+As seen in both these models, more "g" classes were predicted in the SVM model, but more "h" classes were predicted in the Naive Bayes analysis. Both of these models, though, do not serve as explicitly accurate for both classes.
+
+# REFERENCES
+@magerman1995statistical
+@caruana2006empirical
+@sathya2013comparison
